@@ -10,7 +10,6 @@ Type definitions for typing annotations.
 Complex type definitions are moved here, to keep the source files readable.
 """
 from typing import Any, Union, Mapping, TypeVar, Sequence, TYPE_CHECKING
-
 # Generics variable names do not confirm to naming styles, ignore globally here.
 # pylint: disable=invalid-name,abstract-method,multiple-statements
 # pylint: disable=missing-class-docstring,useless-import-alias
