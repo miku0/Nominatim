@@ -23,6 +23,7 @@ from nominatim.api.logging import log
 from nominatim.api.search import query as qmod
 from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
 
+from nominatim.api.search import icu_tokenizer_japanese
 
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
@@ -146,15 +147,32 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('word', sa.Text),
                      sa.Column('info', self.conn.t.types.Json))
 
+    def normalize_and_split_japanese_phrases(
+        self, phrases: List[qmod.Phrase]
+    ) -> List[qmod.Phrase]:
+        """Split a Japanese address using japanese_tokenizer.
+        """
+        splited_address = list(filter(lambda p: p.text,
+                                (qmod.Phrase(p.ptype, icu_tokenizer_japanese.transliterate(p.text))
+                                for p in phrases)))
+        normalized = []
+        for address in splited_address:
+            if address.text:
+                if ',' in address.text:
+                    normalized.extend(
+                        [qmod.Phrase(address.ptype, phrase) for phrase in address.text.split(',')]
+                    )
+                else:
+                    normalized.append(qmod.Phrase(address.ptype, address.text))
+        return normalized
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        normalized = list(filter(lambda p: p.text,
-                                 (qmod.Phrase(p.ptype, self.normalize_text(p.text))
-                                  for p in phrases)))
+        normalized = self.normalize_and_split_japanese_phrases(phrases)
+
         query = qmod.QueryStruct(normalized)
         log().var_dump('Normalized query', query.source)
         if not query.source:
