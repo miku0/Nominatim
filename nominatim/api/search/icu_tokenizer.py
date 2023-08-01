@@ -147,32 +147,34 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('word', sa.Text),
                      sa.Column('info', self.conn.t.types.Json))
 
+    def normalize_and_split_japanese_phrases(
+        self, phrases: List[qmod.Phrase]
+    ) -> List[qmod.Phrase]:
+        """Split a Japanese address using japanese_tokenizer.
+        """
+        splited_address = list(filter(lambda p: p.text,
+                                (qmod.Phrase(p.ptype, icu_tokenizer_japanese.transliterate(p.text))
+                                for p in phrases)))
+        print("phrases",phrases,":",splited_address)
+        return splited_address
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        #normalized = list(filter(lambda p: p.text,
-        #                         (qmod.Phrase(p.ptype, self.normalizer.transliterate(p.text))
-        #                          for p in phrases)))
-        splited_address = list(filter(lambda p: p.text,
-                                 (qmod.Phrase(p.ptype, icu_tokenizer_japanese.transliterate(p.text))
-                                  for p in phrases)))
-        normalized = []
-        for p in splited_address:
-          if p.text:
-            if ',' in p.text:
-              normalized.extend([qmod.Phrase(p.ptype, phrase) for phrase in p.text.split(',')])
-            else:
-              normalized.append(qmod.Phrase(p.ptype, p.text))
+        #normalized = self.normalize_and_split_japanese_phrases(phrases)
 
-        query = qmod.QueryStruct(normalized)
+        #query = qmod.QueryStruct(normalized)
+        query = qmod.QueryStruct(phrases)
+        print("!!!query:",query.source)
         log().var_dump('Normalized query', query.source)
         if not query.source:
             return query
 
         parts, words = self.split_query(query)
+        #print("!!!!parts,words:",parts)
+        #print("!!!words:",words)
         log().var_dump('Transliterated query', lambda: _dump_transliterated(query, parts))
 
         for row in await self.lookup_in_db(list(words.keys())):
@@ -217,11 +219,19 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         parts: QueryParts = []
         phrase_start = 0
         words = defaultdict(list)
+        print("!!!words",words)
         wordnr = 0
+        print("!!!query.source",query.source,type(query.source))
+        query.source = self.normalize_and_split_japanese_phrases(query.source)
         for phrase in query.source:
+            print("!!! pharase (in for )",phrase)
+            print("!!! phrase.ptype",phrase.ptype)
             query.nodes[-1].ptype = phrase.ptype
+            print("!!! query.nodes:",query.nodes[-1])
             for word in phrase.text.split(' '):
+                print("word (split)",word)
                 trans = self.transliterator.transliterate(word)
+                print("trans",trans)
                 if trans:
                     for term in trans.split(' '):
                         if term:
