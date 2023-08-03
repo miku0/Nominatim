@@ -53,8 +53,8 @@ def transliterate(text: str) -> str:
                '''
     result = re.match(pattern, text, re.VERBOSE) # perform normalization using the pattern
     if result is not None:
-        #joined_group = ''.join([result.group(1),', ',result.group(2),', ',result.group(3)])
+        joined_group = ''.join([result.group(1),', ',result.group(2),', ',result.group(3)])
         #joined_group = ''.join([result.group(1),',',result.group(2),',',result.group(3)])
-        joined_group = ''.join([result.group(1),' ',result.group(2),' ',result.group(3)])
+        #joined_group = ''.join([result.group(1),' ',result.group(2),' ',result.group(3)])
         return joined_group
     return text
