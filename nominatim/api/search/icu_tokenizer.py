@@ -221,27 +221,32 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         words = defaultdict(list)
         print("!!!words",words)
         wordnr = 0
-        print("!!!query.source",query.source,type(query.source))
+        #print("!!!query.source",query.source,type(query.source))
         query.source = self.normalize_and_split_japanese_phrases(query.source)
         for phrase in query.source:
             print("!!! pharase (in for )",phrase)
-            print("!!! phrase.ptype",phrase.ptype)
+            #print("!!! phrase.ptype",phrase.ptype)
             query.nodes[-1].ptype = phrase.ptype
-            print("!!! query.nodes:",query.nodes[-1])
+            #print("!!! query.nodes:",query.nodes[-1])
             for word in phrase.text.split(' '):
-                print("word (split)",word)
+                #print("!!!word (split)",word[-1])
                 trans = self.transliterator.transliterate(word)
-                print("trans",trans)
+                #print("!!!trans",trans)
                 if trans:
                     for term in trans.split(' '):
                         if term:
+                            print("!!!term",term,word,wordnr)
                             parts.append(QueryPart(term, word, wordnr))
                             query.add_node(qmod.BreakType.TOKEN, phrase.ptype)
-                    query.nodes[-1].btype = qmod.BreakType.WORD
+                    if word[-1] == ',':
+                        query.nodes[-1].btype = qmod.BreakType.SOFT_PHRASE
+                    else:
+                        query.nodes[-1].btype = qmod.BreakType.WORD
                 wordnr += 1
             query.nodes[-1].btype = qmod.BreakType.PHRASE
 
             for word, wrange in yield_words(parts, phrase_start):
+                print("!!!word,wrange",word,wrange)
                 words[word].append(wrange)
 
             phrase_start = len(parts)

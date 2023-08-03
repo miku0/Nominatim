@@ -377,5 +377,6 @@ PENALTY_WORDCHANGE = {
     BreakType.PHRASE: 0.0,
     BreakType.WORD: 0.1,
     BreakType.PART: 0.2,
-    BreakType.TOKEN: 0.4
+    BreakType.TOKEN: 0.4,
+    BreakType.SOFT_PHRASE: 0.3
 }
