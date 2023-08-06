@@ -184,3 +184,19 @@ async def test_log_output(conn, logtype):
     await ana.analyze_query(make_phrase('foo'))
 
     assert get_and_disable()
+
+@pytest.mark.asyncio
+async def test_soft_phrase(conn):
+    ana = await tok.create_query_analyzer(conn)
+
+    #await add_word(conn, 1, '大阪府', 'W', 'ma')
+    #await add_word(conn, 2, '大阪市', 'W', 'fo')
+    #await add_word(conn, 3, '大阪', 'W', 'o')
+
+    #query = await ana.analyze_query(make_phrase('大阪府, 大阪市, 大阪'))
+    query = await ana.analyze_query(make_phrase('大阪府大阪市大阪'))
+    #print("query node:",query.nodes)
+    
+    assert query.nodes[0].btype == BreakType.START
+    assert query.nodes[1].btype == BreakType.SOFT_PHRASE
+    assert query.nodes[2].btype == BreakType.SOFT_PHRASE#','
