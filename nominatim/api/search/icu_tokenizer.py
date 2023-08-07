@@ -155,6 +155,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         splited_address = list(filter(lambda p: p.text,
                                 (qmod.Phrase(p.ptype, icu_tokenizer_japanese.transliterate(p.text))
                                 for p in phrases)))
+        print("phrases",phrases,":",splited_address)
         normalized = []
         for address in splited_address:
             if address.text:
@@ -164,6 +165,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                     )
                 else:
                     normalized.append(qmod.Phrase(address.ptype, address.text))
+        print("normalized",normalized)
         return normalized
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
