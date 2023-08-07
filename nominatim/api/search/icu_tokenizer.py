@@ -22,7 +22,7 @@ from nominatim.api.connection import SearchConnection
 from nominatim.api.logging import log
 from nominatim.api.search import query as qmod
 from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
-
+from nominatim.api.search import icu_tokenizer_japanese
 
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
@@ -203,6 +203,15 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         """
         return cast(str, self.normalizer.transliterate(text))
 
+    def split_key_japanese_phrases(
+        self, phrases: List[qmod.Phrase]
+    ) -> List[qmod.Phrase]:
+        """Split a Japanese address using japanese_tokenizer.
+        """
+        splited_address = list(filter(lambda p: p.text,
+                                (qmod.Phrase(p.ptype, icu_tokenizer_japanese.transliterate(p.text))
+                                for p in phrases)))
+        return splited_address
 
     def split_query(self, query: qmod.QueryStruct) -> Tuple[QueryParts, WordDict]:
         """ Transliterate the phrases and split them into tokens.
@@ -215,6 +224,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         phrase_start = 0
         words = defaultdict(list)
         wordnr = 0
+        query.source = self.split_key_japanese_phrases(query.source)
         for phrase in query.source:
             query.nodes[-1].ptype = phrase.ptype
             for word in phrase.text.split(' '):
@@ -224,7 +234,10 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                         if term:
                             parts.append(QueryPart(term, word, wordnr))
                             query.add_node(qmod.BreakType.TOKEN, phrase.ptype)
-                    query.nodes[-1].btype = qmod.BreakType.WORD
+                    if word[-1] == ',':
+                        query.nodes[-1].btype = qmod.BreakType.SOFT_PHRASE
+                    else:
+                        query.nodes[-1].btype = qmod.BreakType.WORD
                 wordnr += 1
             query.nodes[-1].btype = qmod.BreakType.PHRASE
 
