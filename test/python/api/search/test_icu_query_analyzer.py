@@ -198,7 +198,7 @@ async def test_soft_phrase(conn):
     await add_word(conn, 2, 'da ban shi', 'W', '大阪市')
     await add_word(conn, 3, 'da ban', 'W', '大阪')
     query = await ana.analyze_query(make_phrase('大阪府大阪市大阪'))
-    
     assert query.nodes[0].btype == BreakType.START
     assert query.nodes[1].btype == BreakType.SOFT_PHRASE
     assert query.nodes[2].btype == BreakType.SOFT_PHRASE
+    assert query.nodes[3].btype == BreakType.END
