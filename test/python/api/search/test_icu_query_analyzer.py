@@ -202,3 +202,9 @@ async def test_soft_phrase(conn):
     assert query.nodes[1].btype == BreakType.SOFT_PHRASE
     assert query.nodes[2].btype == BreakType.SOFT_PHRASE
     assert query.nodes[3].btype == BreakType.END
+
+    query2 = await ana.analyze_query(make_phrase('大阪府大阪'))
+    assert query2.nodes[1].btype == BreakType.SOFT_PHRASE
+
+    query3 = await ana.analyze_query(make_phrase('大阪市大阪'))
+    assert query3.nodes[1].btype == BreakType.SOFT_PHRASE

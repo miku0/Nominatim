@@ -17,15 +17,29 @@ def transliterate(text: str) -> str:
     """
     This function performs a division on the given text using a regular expression.
     """
-    pattern = r'''
+    pattern_full = r'''
                (...??[都道府県])            # [group1] prefecture
                (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
                (.+)                         # [group3] other words
                '''
-    result = re.match(pattern, text, re.VERBOSE) # perform normalization using the pattern
-    if result is not None:
-        joined_group = ''.join([result.group(1),', ',result.group(2),', ',result.group(3)])
-        #joined_group = ''.join([result.group(1),',',result.group(2),',',result.group(3)])
-        #joined_group = ''.join([result.group(1),' ',result.group(2),' ',result.group(3)])
+    pattern_1 = r'''
+               (...??[都道府県])            # [group1] prefecture
+               (.+)                         # [group3] other words
+               '''
+    pattern_2 = r'''
+               (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
+               (.+)                         # [group3] other words
+               '''
+    result_full = re.match(pattern_full, text, re.VERBOSE) # perform normalization using the pattern
+    result_1 = re.match(pattern_1, text, re.VERBOSE) # perform normalization using the pattern
+    result_2 = re.match(pattern_2, text, re.VERBOSE) # perform normalization using the pattern
+    if result_full is not None:
+        joined_group = ''.join([result_full.group(1),', ',result_full.group(2),', ',result_full.group(3)])
+        return joined_group
+    elif result_1 is not None:
+        joined_group = ''.join([result_1.group(1),', ',result_1.group(2)])
+        return joined_group
+    elif result_2 is not None:
+        joined_group = ''.join([result_2.group(1),', ',result_2.group(2)])
         return joined_group
     return text

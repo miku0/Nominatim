@@ -272,6 +272,9 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         """ Add penalties to tokens that depend on presence of other token.
         """
         for i, node, tlist in query.iter_token_lists():
+            if node.btype == qmod.BreakType.SOFT_PHRASE:
+                node.starting[-1].add_penalty(0.39)
+
             if tlist.ttype == qmod.TokenType.POSTCODE:
                 for repl in node.starting:
                     if repl.end == tlist.end and repl.ttype != qmod.TokenType.POSTCODE \
