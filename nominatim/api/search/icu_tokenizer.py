@@ -271,9 +271,25 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
     def rerank_tokens(self, query: qmod.QueryStruct, parts: QueryParts) -> None:
         """ Add penalties to tokens that depend on presence of other token.
         """
+        dic_candidate_SOFT = {}
         for i, node, tlist in query.iter_token_lists():
+                print("i (start), tlist.end (end), node.btype",i,tlist.end,node.btype)
+                lookup_words = [token.lookup_word for token in tlist.tokens]
+                print(lookup_words)
+
             if node.btype == qmod.BreakType.SOFT_PHRASE:
-                node.starting[-1].add_penalty(0.39)
+                if i not in dic_candidate_SOFT:
+                    dic_candidate_SOFT[i] = set()
+                dic_candidate_SOFT[i].add(tlist.end)
+        dic_SOFT = {}
+        for start in dic_candidate_SOFT:
+            for end in dic_candidate_SOFT[start]:
+                if end == start+1:
+                    dic_SOFT[start] = end
+
+        for i, node, tlist in query.iter_token_lists():
+            if dic_SOFT and tlist.end > dic_SOFT[i]:
+                tlist.add_penalty(0.5)
 
             if tlist.ttype == qmod.TokenType.POSTCODE:
                 for repl in node.starting:
