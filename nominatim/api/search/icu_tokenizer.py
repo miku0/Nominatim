@@ -277,7 +277,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                     set_SOFT_idx.add(i)
 
         for i, node, tlist in query.iter_token_lists():
-            for key in dic_SOFT_idx:
+            for key in set_SOFT_idx:
                 if i<key and key<tlist.end:
                     tlist.add_penalty(0.5)
 
