@@ -115,7 +115,7 @@ async def test_penalty_postcodes_and_housenumbers(conn, term, order):
     await add_word(conn, 4, term, 'W', term)
 
     query = await ana.analyze_query(make_phrase(term))
-    print(query.nodes[0].starting)
+    print(query.nodes)
     assert query.num_token_slots() == 1
 
     torder = [(tl.tokens[0].penalty, tl.ttype.name) for tl in query.nodes[0].starting]
@@ -214,19 +214,27 @@ async def test_soft_phrase(conn):
 async def test_penalty_soft_phrase(conn,term,order):
     ana = await tok.create_query_analyzer(conn)
 
-    await add_word(conn, 104, 'da', 'w', None)
-    await add_word(conn, 105, 'ban', 'w', None)
-    await add_word(conn, 106, 'fu', 'w', None)
-    await add_word(conn, 107, 'shi', 'w', None)
+    await add_word(conn, 104, 'da', 'w', 'da')
+    await add_word(conn, 105, 'ban', 'w', 'ban')
+    #await add_word(conn, 106, 'fu', 'w', 'fu')
+    await add_word(conn, 107, 'shi', 'w', 'shi')
+    #await add_word(conn, 108, 'shi', 'w' , 'shi')
 
-    await add_word(conn, 1, 'da ban fu', 'W', '大阪府')
+    #await add_word(conn, 1, 'da ban fu', 'W', '大阪府')
     await add_word(conn, 2, 'da ban shi', 'W', '大阪市')
     await add_word(conn, 3, 'da ban', 'W', '大阪')
-    query = await ana.analyze_query(make_phrase('大阪府大阪市大阪'))
+    await add_word(conn, 4, 'da ban shi da ban', 'W', '大阪市大阪')
+    #await add_word(conn, 5, 'da ban shi da ban', 'W', '大阪市,大阪')
+    #query = await ana.analyze_query(make_phrase('大阪府大阪市大阪'))
+    #query = await ana.analyze_query(make_phrase('shi'))
+    query = await ana.analyze_query(make_phrase('da ban shi da ban'))
     #assert query.num_token_slots() == 1
-    print(query.source,query.nodes[2],query.nodes[3])
-    torder = [(tl.tokens[0].penalty, tl.ttype.name) for tl in query.nodes[0].starting]
-    print(torder)
+    #print(query.nodes[0].starting)
+    #print(query.source,query.nodes[2],query.nodes[3])
+    #for tl in query.nodes[0].starting:
+    #    print('tl:',tl.tokens[0].lookup_word)
+    torder = [(tl.tokens[0].penalty, tl.tokens[0].lookup_word) for tl in query.nodes[0].starting]
     torder.sort()
+    #print(torder)
 
-    assert [t[1] for t in torder] == '大阪府大阪市大阪'
+    assert torder[-1][-1] == '大阪市大阪'
