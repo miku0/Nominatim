@@ -7,7 +7,7 @@
 """
 Implementation of query analysis for the ICU tokenizer.
 """
-from typing import Tuple, Dict, List, Optional, NamedTuple, Iterator, Any, cast
+from typing import Tuple, Dict, List, Optional, NamedTuple, Iterator, Any, cast, Set
 from copy import copy
 from collections import defaultdict
 import dataclasses
@@ -161,10 +161,15 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        normalized = list(filter(lambda p: p.text,
-                                 (qmod.Phrase(p.ptype, self.normalize_text(p.text))
-                                  for p in phrases)))
-        query = qmod.QueryStruct(normalized)
+        preprocess_query_functions = [self.normalize_phrases, self.split_key_japanese_phrases]
+        for func in preprocess_query_functions:
+            phrases = func(phrases)
+
+        #normalized = list(filter(lambda p: p.text,
+        #                         (qmod.Phrase(p.ptype, self.normalize_text(p.text))
+        #                          for p in phrases)))
+        #query = qmod.QueryStruct(normalized)
+        query = qmod.QueryStruct(phrases)
         log().var_dump('Normalized query', query.source)
         if not query.source:
             return query
@@ -203,6 +208,16 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         """
         return cast(str, self.normalizer.transliterate(text))
 
+    def normalize_phrases(
+        self, phrases: List[qmod.Phrase]
+    ) -> List[qmod.Phrase]:
+        """Normalize the phrases
+        """
+        normalized = list(filter(lambda p: p.text,
+                                 (qmod.Phrase(p.ptype, self.normalize_text(p.text))
+                                  for p in phrases)))
+        return normalized
+
     def split_key_japanese_phrases(
         self, phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
@@ -224,7 +239,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         phrase_start = 0
         words = defaultdict(list)
         wordnr = 0
-        query.source = self.split_key_japanese_phrases(query.source)
+        #query.source = self.split_key_japanese_phrases(query.source)
         for phrase in query.source:
             query.nodes[-1].ptype = phrase.ptype
             for word in phrase.text.split(' '):
@@ -267,20 +282,34 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                 query.add_token(qmod.TokenRange(i, i+1), qmod.TokenType.HOUSENUMBER,
                                 ICUToken(0.5, 0, 1, part.token, True, part.token, None))
 
+    def collect_soft_phrase_indexes(self, query: qmod.QueryStruct) -> Set[int]:
+        """Create a set of indexes of nodes with soft_phrase.
+        """
+        soft_phrase_idx_set = set()
+        for i, node in enumerate(query.nodes):
+            if node.btype == qmod.BreakType.SOFT_PHRASE:
+                soft_phrase_idx_set.add(i)
+        return soft_phrase_idx_set
+
+    def add_soft_phrase_penalties(
+        self,
+        i: int,
+        tlist: qmod.TokenList,
+        soft_phrase_idx_set: Set[int]
+    ) -> None:
+        """This function adds penalties to tokens based on the presence of soft phrases.
+        """
+        for key in soft_phrase_idx_set:
+            if i < key and key < tlist.end:
+                tlist.add_penalty(0.5)
 
     def rerank_tokens(self, query: qmod.QueryStruct, parts: QueryParts) -> None:
         """ Add penalties to tokens that depend on presence of other token.
         """
-        set_SOFT_idx = {}
-        for i, node, tlist in query.iter_token_lists():
-                if node.btype == qmod.BreakType.SOFT_PHRASE:
-                    set_SOFT_idx.add(i)
+        soft_phrase_idx_set = self.collect_soft_phrase_indexes(query)
 
         for i, node, tlist in query.iter_token_lists():
-            for key in set_SOFT_idx:
-                if i<key and key<tlist.end:
-                    tlist.add_penalty(0.5)
-
+            self.add_soft_phrase_penalties(i, tlist, soft_phrase_idx_set)
             if tlist.ttype == qmod.TokenType.POSTCODE:
                 for repl in node.starting:
                     if repl.end == tlist.end and repl.ttype != qmod.TokenType.POSTCODE \

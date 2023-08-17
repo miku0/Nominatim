@@ -30,16 +30,22 @@ def transliterate(text: str) -> str:
                (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
                (.+)                         # [group3] other words
                '''
-    result_full = re.match(pattern_full, text, re.VERBOSE) # perform normalization using the pattern
-    result_1 = re.match(pattern_1, text, re.VERBOSE) # perform normalization using the pattern
-    result_2 = re.match(pattern_2, text, re.VERBOSE) # perform normalization using the pattern
+    result_full = re.match(pattern_full, text, re.VERBOSE)
+    result_1 = re.match(pattern_1, text, re.VERBOSE)
+    result_2 = re.match(pattern_2, text, re.VERBOSE)
     if result_full is not None:
-        joined_group = ''.join([result_full.group(1),', ',result_full.group(2),', ',result_full.group(3)])
+        joined_group = ''.join([
+                                result_full.group(1),
+                                ', ',
+                                result_full.group(2),
+                                ', ',
+                                result_full.group(3)
+                               ])
         return joined_group
-    elif result_1 is not None:
+    if result_1 is not None:
         joined_group = ''.join([result_1.group(1),', ',result_1.group(2)])
         return joined_group
-    elif result_2 is not None:
+    if result_2 is not None:
         joined_group = ''.join([result_2.group(1),', ',result_2.group(2)])
         return joined_group
     return text
