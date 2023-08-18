@@ -4,14 +4,20 @@
 #
 # This file is part of Nominatim. (https://nominatim.org)
 #
-# Copyright (C) 2022 by the Nominatim developer community.
+# Copyright (C) 2023 by the Nominatim developer community.
 # For a full list of authors see the git log.
 """
-This icu_tokenizer divides Japanese addresses into three categories:
+This file divides Japanese addresses into three categories:
 prefecture, municipality, and other.
 The division is not strict but simple using these keywords.
+Based on this division, icu_tokenizer.py inserts
+a SOFT_PHRASE break between the divided words 
+and penalizes the words with this SOFT_PHRASE
+to lower the search priority.
 """
 import re
+from typing import List
+from nominatim.api.search import query as qmod
 
 def transliterate(text: str) -> str:
     """
@@ -49,3 +55,13 @@ def transliterate(text: str) -> str:
         joined_group = ''.join([result_2.group(1),', ',result_2.group(2)])
         return joined_group
     return text
+
+def split_key_japanese_phrases(
+    phrases: List[qmod.Phrase]
+) -> List[qmod.Phrase]:
+    """Split a Japanese address using japanese_tokenizer.
+    """
+    splited_address = list(filter(lambda p: p.text,
+                            (qmod.Phrase(p.ptype, transliterate(p.text))
+                            for p in phrases)))
+    return splited_address

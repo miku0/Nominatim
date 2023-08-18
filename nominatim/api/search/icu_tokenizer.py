@@ -161,14 +161,13 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        preprocess_query_functions = [self.normalize_phrases, self.split_key_japanese_phrases]
+        preprocess_query_functions = [
+            self.normalize_phrases,
+            icu_tokenizer_japanese.split_key_japanese_phrases
+        ]
         for func in preprocess_query_functions:
             phrases = func(phrases)
 
-        #normalized = list(filter(lambda p: p.text,
-        #                         (qmod.Phrase(p.ptype, self.normalize_text(p.text))
-        #                          for p in phrases)))
-        #query = qmod.QueryStruct(normalized)
         query = qmod.QueryStruct(phrases)
         log().var_dump('Normalized query', query.source)
         if not query.source:
@@ -239,7 +238,6 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         phrase_start = 0
         words = defaultdict(list)
         wordnr = 0
-        #query.source = self.split_key_japanese_phrases(query.source)
         for phrase in query.source:
             query.nodes[-1].ptype = phrase.ptype
             for word in phrase.text.split(' '):
