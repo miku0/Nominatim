@@ -210,7 +210,7 @@ token-analysis:
       variants:
           - !include icu-rules/variants-vi.yaml
 query-preprocessing:
-  - step: clean-by-pattern
-    pattern: \d+\.\d+\.\d+.\d+
-  - step: normalize
-  - step: split-key-japanese-phrases
+    - step: clean-by-pattern
+      pattern: \d+\.\d+\.\d+.\d+
+    - step: normalize
+    - step: split-key-japanese-phrases
