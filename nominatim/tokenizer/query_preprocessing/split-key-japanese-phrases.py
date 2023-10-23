@@ -17,49 +17,55 @@ import re
 from typing import List
 from nominatim.api.search import query as qmod
 
-def transliterate(text: str) -> str:
-    """
-    This function performs a division on the given text using a regular expression.
-    """
-    pattern_full = r'''
-               (...??[都道府県])            # [group1] prefecture
-               (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
-               (.+)                         # [group3] other words
-               '''
-    pattern_1 = r'''
-               (...??[都道府県])            # [group1] prefecture
-               (.+)                         # [group3] other words
-               '''
-    pattern_2 = r'''
-               (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
-               (.+)                         # [group3] other words
-               '''
-    result_full = re.match(pattern_full, text, re.VERBOSE)
-    result_1 = re.match(pattern_1, text, re.VERBOSE)
-    result_2 = re.match(pattern_2, text, re.VERBOSE)
-    if result_full is not None:
-        joined_group = ''.join([
-                                result_full.group(1),
-                                ', ',
-                                result_full.group(2),
-                                ', ',
-                                result_full.group(3)
-                               ])
-        return joined_group
-    if result_1 is not None:
-        joined_group = ''.join([result_1.group(1),', ',result_1.group(2)])
-        return joined_group
-    if result_2 is not None:
-        joined_group = ''.join([result_2.group(1),', ',result_2.group(2)])
-        return joined_group
-    return text
+class _JapanesePreprocessing:
+    def transliterate(text: str) -> str:
+        """
+        This function performs a division on the given text using a regular expression.
+        """
+        pattern_full = r'''
+                (...??[都道府県])            # [group1] prefecture
+                (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
+                (.+)                         # [group3] other words
+                '''
+        pattern_1 = r'''
+                (...??[都道府県])            # [group1] prefecture
+                (.+)                         # [group3] other words
+                '''
+        pattern_2 = r'''
+                (.+?[市区町村])              # [group2] municipalities (city/wards/towns/villages)
+                (.+)                         # [group3] other words
+                '''
+        result_full = re.match(pattern_full, text, re.VERBOSE)
+        result_1 = re.match(pattern_1, text, re.VERBOSE)
+        result_2 = re.match(pattern_2, text, re.VERBOSE)
+        if result_full is not None:
+            joined_group = ''.join([
+                                    result_full.group(1),
+                                    ', ',
+                                    result_full.group(2),
+                                    ', ',
+                                    result_full.group(3)
+                                ])
+            return joined_group
+        if result_1 is not None:
+            joined_group = ''.join([result_1.group(1),', ',result_1.group(2)])
+            return joined_group
+        if result_2 is not None:
+            joined_group = ''.join([result_2.group(1),', ',result_2.group(2)])
+            return joined_group
+        return text
 
-def split_key_japanese_phrases(
-    phrases: List[qmod.Phrase]
-) -> List[qmod.Phrase]:
-    """Split a Japanese address using japanese_tokenizer.
+    def split_key_japanese_phrases(
+        phrases: List[qmod.Phrase]
+    ) -> List[qmod.Phrase]:
+        """Split a Japanese address using japanese_tokenizer.
+        """
+        splited_address = list(filter(lambda p: p.text,
+                                (qmod.Phrase(p.ptype, transliterate(p.text))
+                                for p in phrases)))
+        return splited_address
+
+def create(config: QueryConfig) -> Callable[[QueryInfo], None]:
+    """ Create a function of japanese preprocessing. 
     """
-    splited_address = list(filter(lambda p: p.text,
-                            (qmod.Phrase(p.ptype, transliterate(p.text))
-                            for p in phrases)))
-    return splited_address
+    return _JapanesePreprocessing(config)

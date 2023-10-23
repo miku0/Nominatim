@@ -20,22 +20,25 @@ class QueryInfo:
     QueryInfo has a List[Phrase] that is variable by preprocessor function.
     QueryInfo class allows us to later add more functionality to the preprocessing without breaking existing code.
     """
+    #def __init__(self, phrases: List[qmod.Phrase]):
+    def __init__(self, rules: Optional[Sequence[Mapping[str, Any]]],
+                 config: Configuration) -> None:
+        self.handlers: List[Callable[[QueryInfo], None]] = []
 
-    def __init__(self, phrases: List[qmod.Phrase]):
-        self.phrases: List[qmod.Phrase] = phrases
-    
-    def preprocessing(self):
-        preprocess_query_functions = [
-            normalize.normalize,
-            split_key_japanese_phrases.split_key_japanese_phrases
-        ]
-        new_phrases = self.phrases.copy()
-        for func in preprocess_query_functions:
-            new_phrases = func(new_phrases)
-        return new_phrases
+        if rules:
+            for func in rules:
+                if 'step' not in func:
+                    raise UsageError("Preprocessing rule is missing the 'step' attribute.")
+                if not isinstance(func['step'], str):
+                    raise UsageError("'step' attribute must be a simple string.")
+
+                module: QueryHandler = \
+                    config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
+
+                self.handlers.append(module.create(QueryConfig(func)))
 
 class QueryHandler(Protocol):
-    """ Protocol for sanitizer modules.
+    """ Protocol for query modules.
     """
     def create(self, config: QueryConfig) -> Callable[[QueryInfo], None]:
         """
