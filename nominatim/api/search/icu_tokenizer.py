@@ -23,6 +23,7 @@ from nominatim.api.search import query as qmod
 from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
 from nominatim.db.sqlalchemy_types import Json
 
+from nominatim.config import Configuration
 
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
@@ -132,8 +133,9 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         using the tokens created by a ICU tokenizer.
     """
 
-    def __init__(self, conn: SearchConnection) -> None:
+    def __init__(self, conn: SearchConnection, config: Configuration) -> None:
         self.conn = conn
+        self.config = config
 
 
     async def setup(self) -> None:
@@ -177,9 +179,10 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
 
                     handlers.append(module.create(QueryConfig(func)))
             return handlers
-  
+        rules = self.config.load_sub_configuration('icu_tokenizer.yaml',
+                                              config='QUERY_CONFIG')
         self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
-                                                    _preprocessing)
+                                                    _preprocessing(rules,self.config))
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
