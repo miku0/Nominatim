@@ -11,7 +11,7 @@ from typing import Optional, List, Mapping, Callable
 
 from nominatim.tokenizer.query_preprocessing.config import QueryConfig
 from nominatim.typing import Protocol, Final
-from nominatim.api.search import query as qmod
+from nominatim.api.search import Phrase
 from nominatim.tokenizer.query_preprocessing import normalize
 from nominatim.tokenizer.query_preprocessing import split-key-japanese-phrases
 
@@ -20,22 +20,9 @@ class QueryInfo:
     QueryInfo has a List[Phrase] that is variable by preprocessor function.
     QueryInfo class allows us to later add more functionality to the preprocessing without breaking existing code.
     """
-    #def __init__(self, phrases: List[qmod.Phrase]):
-    def __init__(self, rules: Optional[Sequence[Mapping[str, Any]]],
-                 config: Configuration) -> None:
-        self.handlers: List[Callable[[QueryInfo], None]] = []
+    def __init__(self, phrases: List[Phrase]):
+        self.phrases: List[Phrase] = phrases
 
-        if rules:
-            for func in rules:
-                if 'step' not in func:
-                    raise UsageError("Preprocessing rule is missing the 'step' attribute.")
-                if not isinstance(func['step'], str):
-                    raise UsageError("'step' attribute must be a simple string.")
-
-                module: QueryHandler = \
-                    config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
-
-                self.handlers.append(module.create(QueryConfig(func)))
 
 class QueryHandler(Protocol):
     """ Protocol for query modules.

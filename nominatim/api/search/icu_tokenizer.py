@@ -160,16 +160,34 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('type', sa.Text, nullable=False),
                      sa.Column('word', sa.Text),
                      sa.Column('info', Json))
+        
+        async def _preprocessing(rules: Optional[Sequence[Mapping[str, Any]]],
+                    config: Configuration) ->List[Callable[[QueryInfo], None]]:
+            handlers: List[Callable[[QueryInfo], None]] = []
 
+            if rules:
+                for func in rules:
+                    if 'step' not in func:
+                        raise UsageError("Preprocessing rule is missing the 'step' attribute.")
+                    if not isinstance(func['step'], str):
+                        raise UsageError("'step' attribute must be a simple string.")
+
+                    module: QueryHandler = \
+                        config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
+
+                    handlers.append(module.create(QueryConfig(func)))
+            return handlers
+  
+        self.transliterator = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
+                                                    _preprocessing)
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        normalized = list(filter(lambda p: p.text,
-                                 (qmod.Phrase(p.ptype, self.normalize_text(p.text))
-                                  for p in phrases)))
+        for func in self.handlers:
+            phrases = func(phrases)
         query = qmod.QueryStruct(normalized)
         log().var_dump('Normalized query', query.source)
         if not query.source:
