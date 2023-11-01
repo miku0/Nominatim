@@ -178,7 +178,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                     handlers.append(module.create(QueryConfig(func)))
             return handlers
   
-        self.transliterator = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
+        self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
                                                     _preprocessing)
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
