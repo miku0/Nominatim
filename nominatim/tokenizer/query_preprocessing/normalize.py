@@ -20,7 +20,7 @@ class _NormalizationPreprocessing:
         """
         return cast(str, normalizer.transliterate(text))
 
-    def normalize(
+    def __call__(
         phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
         """Split a Japanese address using japanese_tokenizer.

@@ -23,8 +23,6 @@ from nominatim.api.search import query as qmod
 from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
 from nominatim.db.sqlalchemy_types import Json
 
-from nominatim.config import Configuration
-
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
     'w': qmod.TokenType.PARTIAL,
@@ -133,10 +131,8 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         using the tokens created by a ICU tokenizer.
     """
 
-    def __init__(self, conn: SearchConnection, config: Configuration) -> None:
+    def __init__(self, conn: SearchConnection) -> None:
         self.conn = conn
-        self.config = config
-
 
     async def setup(self) -> None:
         """ Set up static data structures needed for the analysis.
@@ -164,7 +160,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('info', Json))
         
         async def _preprocessing(rules: Optional[Sequence[Mapping[str, Any]]],
-                    config: Configuration) ->List[Callable[[QueryInfo], None]]:
+                    ) ->List[Callable[[QueryInfo], None]]:
             handlers: List[Callable[[QueryInfo], None]] = []
 
             if rules:
@@ -175,14 +171,14 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                         raise UsageError("'step' attribute must be a simple string.")
 
                     module: QueryHandler = \
-                        config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
+                        self.conn.config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
 
                     handlers.append(module.create(QueryConfig(func)))
             return handlers
-        rules = self.config.load_sub_configuration('icu_tokenizer.yaml',
-                                              config='QUERY_CONFIG')
+        rules = self.conn.config.load_sub_configuration('icu_tokenizer.yaml',
+                                              self.conn.config='QUERY_CONFIG')
         self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
-                                                    _preprocessing(rules,self.config))
+                                                    _preprocessing(rules,self.conn.config))
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the

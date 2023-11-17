@@ -55,7 +55,7 @@ class _JapanesePreprocessing:
             return joined_group
         return text
 
-    def split_key_japanese_phrases(
+    def __call__(
         phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
         """Split a Japanese address using japanese_tokenizer.

@@ -181,7 +181,7 @@ class NominatimAPIAsync: #pylint: disable=too-many-instance-attributes
         assert self._tables is not None
 
         async with self._engine.begin() as conn:
-            yield SearchConnection(conn, self._tables, self._property_cache)
+            yield SearchConnection(conn, self._tables, self._property_cache, self.config)
 
 
     async def status(self) -> StatusResult:
