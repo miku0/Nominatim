@@ -191,6 +191,9 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
+        phrases = list(filter(lambda p: p.text,
+                                (qmod.Phrase(p.ptype, self.normalize_text(p.text))
+                                for p in phrases)))
         for func in self.handlers:
             phrases = func(phrases)
         query = qmod.QueryStruct(phrases)
