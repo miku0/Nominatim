@@ -23,6 +23,9 @@ from nominatim.api.search import query as qmod
 from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
 from nominatim.db.sqlalchemy_types import Json
 
+from nominatim.tokenizer.query_preprocessing.config import QueryConfig
+from nominatim.tokenizer.query_preprocessing.base import QueryHandler, QueryInfo
+
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
     'w': qmod.TokenType.PARTIAL,
@@ -159,8 +162,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('word', sa.Text),
                      sa.Column('info', Json))
         
-        async def _preprocessing(rules: Optional[Sequence[Mapping[str, Any]]],
-                    ) ->List[Callable[[QueryInfo], None]]:
+        def _preprocessing(rules: Optional[Sequence[Mapping[str, Any]]]) ->List[Callable[[QueryInfo], None]]:
             handlers: List[Callable[[QueryInfo], None]] = []
 
             if rules:
@@ -173,12 +175,16 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                     module: QueryHandler = \
                         self.conn.config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
 
+                    #handlers.append(module.create(QueryConfig(func),self.conn))
                     handlers.append(module.create(QueryConfig(func)))
             return handlers
         rules = self.conn.config.load_sub_configuration('icu_tokenizer.yaml',
-                                              self.conn.config='QUERY_CONFIG')
-        self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
-                                                    _preprocessing(rules,self.conn.config))
+                                              config='TOKENIZER_CONFIG')
+        preprocessing_rules = rules.get('query-preprocessing', [])
+        #self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
+        #                                            _preprocessing(preprocessing_rules))
+        self.handlers = _preprocessing(preprocessing_rules)
+        
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
@@ -187,7 +193,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         log().section('Analyze query (using ICU tokenizer)')
         for func in self.handlers:
             phrases = func(phrases)
-        query = qmod.QueryStruct(normalized)
+        query = qmod.QueryStruct(phrases)
         log().var_dump('Normalized query', query.source)
         if not query.source:
             return query

@@ -19,6 +19,8 @@ from nominatim.db.sqlalchemy_schema import SearchTables
 from nominatim.db.sqlalchemy_types import Geometry
 from nominatim.api.logging import log
 
+from nominatim.config import Configuration
+
 T = TypeVar('T')
 
 class SearchConnection:
@@ -30,12 +32,14 @@ class SearchConnection:
 
     def __init__(self, conn: AsyncConnection,
                  tables: SearchTables,
-                 properties: Dict[str, Any]) -> None:
+                 properties: Dict[str, Any],
+                 config: Configuration) -> None:
         self.connection = conn
         self.t = tables # pylint: disable=invalid-name
         self._property_cache = properties
         self._classtables: Optional[Set[str]] = None
         self.query_timeout: Optional[int] = None
+        self.config = config
 
 
     def set_query_timeout(self, timeout: Optional[int]) -> None:

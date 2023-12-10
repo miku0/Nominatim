@@ -7,30 +7,33 @@
 """
 This file normalizes text using ICU, a library that performs conversion of Unicode characters.
 """
-import re
-from typing import List
+from typing import List, Callable
 from nominatim.api.search import query as qmod
+from nominatim.tokenizer.query_preprocessing.config import QueryConfig
+from nominatim.tokenizer.query_preprocessing.base import QueryInfo
+from nominatim.api.search import icu_tokenizer
+from nominatim.api.connection import SearchConnection
+from nominatim.api.search.icu_tokenizer import ICUQueryAnalyzer
 
 
 class _NormalizationPreprocessing:
-    def normalize_text(text: str) -> str:
-        """ Bring the given text into a normalized form. That is the
-            standardized form search will work with. All information removed
-            at this stage is inevitably lost.
-        """
-        return cast(str, normalizer.transliterate(text))
+
+    def __init__(self, config: QueryConfig, conn: SearchConnection) -> None:
+        self.config = config
+        self.conn = conn
 
     def __call__(
-        phrases: List[qmod.Phrase]
+        self, phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
         """Split a Japanese address using japanese_tokenizer.
         """
+        analyser = ICUQueryAnalyzer(self.conn)
         normalized = list(filter(lambda p: p.text,
-                                (qmod.Phrase(p.ptype, normalize_text(p.text))
+                                (qmod.Phrase(p.ptype, analyser.normalize_text(p.text))
                                 for p in phrases)))
         return normalized
 
-def create(config: QueryConfig) -> Callable[[QueryInfo], None]:
+def create(config: QueryConfig, conn: SearchConnection) -> Callable[[QueryInfo], None]:
     """ Create a normalization function. 
     """
-    return _NormalizationPreprocessing(config)
+    return _NormalizationPreprocessing(config, conn)

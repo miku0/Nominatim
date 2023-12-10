@@ -14,11 +14,16 @@ and penalizes the words with this SOFT_PHRASE
 to lower the search priority.
 """
 import re
-from typing import List
+from typing import List, Callable
 from nominatim.api.search import query as qmod
+from nominatim.tokenizer.query_preprocessing.config import QueryConfig
+from nominatim.tokenizer.query_preprocessing.base import QueryInfo
 
 class _JapanesePreprocessing:
-    def transliterate(text: str) -> str:
+    def __init__(self, config: QueryConfig) -> None:
+        self.config = config
+
+    def transliterate(self, text: str) -> str:
         """
         This function performs a division on the given text using a regular expression.
         """
@@ -56,12 +61,12 @@ class _JapanesePreprocessing:
         return text
 
     def __call__(
-        phrases: List[qmod.Phrase]
+        self, phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
         """Split a Japanese address using japanese_tokenizer.
         """
         splited_address = list(filter(lambda p: p.text,
-                                (qmod.Phrase(p.ptype, transliterate(p.text))
+                                (qmod.Phrase(p.ptype, self.transliterate(p.text))
                                 for p in phrases)))
         return splited_address
 

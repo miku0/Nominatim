@@ -12,8 +12,6 @@ from typing import Optional, List, Mapping, Callable
 from nominatim.tokenizer.query_preprocessing.config import QueryConfig
 from nominatim.typing import Protocol, Final
 from nominatim.api.search import Phrase
-from nominatim.tokenizer.query_preprocessing import normalize
-from nominatim.tokenizer.query_preprocessing import split-key-japanese-phrases
 
 class QueryInfo:
     """ Container class for information handed into to handler functions.
