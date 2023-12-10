@@ -28,6 +28,7 @@ class _NormalizationPreprocessing:
         """Split a Japanese address using japanese_tokenizer.
         """
         analyser = ICUQueryAnalyzer(self.conn)
+        analyser.setup()
         normalized = list(filter(lambda p: p.text,
                                 (qmod.Phrase(p.ptype, analyser.normalize_text(p.text))
                                 for p in phrases)))
