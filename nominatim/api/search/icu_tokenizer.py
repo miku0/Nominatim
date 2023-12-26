@@ -228,12 +228,12 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         return query
 
 
-    def normalize_text(self, text: str) -> str:
-        """ Bring the given text into a normalized form. That is the
-            standardized form search will work with. All information removed
-            at this stage is inevitably lost.
-        """
-        return cast(str, self.normalizer.transliterate(text))
+    #def normalize_text(self, text: str) -> str:
+    #    """ Bring the given text into a normalized form. That is the
+    #        standardized form search will work with. All information removed
+    #        at this stage is inevitably lost.
+    #    """
+    #    return cast(str, self.normalizer.transliterate(text))
 
 
     def split_query(self, query: qmod.QueryStruct) -> Tuple[QueryParts, WordDict]:
