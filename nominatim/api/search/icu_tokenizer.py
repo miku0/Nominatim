@@ -176,7 +176,7 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                         self.conn.config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
 
                     #handlers.append(module.create(QueryConfig(func),self.conn))
-                    handlers.append(module.create(QueryConfig(func)))
+                    handlers.append(module.create(QueryConfig(func), self.normalizer))
             return handlers
         rules = self.conn.config.load_sub_configuration('icu_tokenizer.yaml',
                                               config='TOKENIZER_CONFIG')
@@ -191,9 +191,10 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
             tokenized query.
         """
         log().section('Analyze query (using ICU tokenizer)')
-        phrases = list(filter(lambda p: p.text,
-                                (qmod.Phrase(p.ptype, self.normalize_text(p.text))
-                                for p in phrases)))
+        #phrases = list(filter(lambda p: p.text,
+        #                        (qmod.Phrase(p.ptype, self.normalize_text(p.text))
+        #                        for p in phrases)))
+        #print("after normalization: ", phrases)
         for func in self.handlers:
             phrases = func(phrases)
         query = qmod.QueryStruct(phrases)
