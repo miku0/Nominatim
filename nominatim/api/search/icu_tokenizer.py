@@ -7,7 +7,7 @@
 """
 Implementation of query analysis for the ICU tokenizer.
 """
-from typing import Tuple, Dict, List, Optional, NamedTuple, Iterator, Any, cast
+from typing import Tuple, Dict, List, Optional, NamedTuple, Iterator, Any, cast, Sequence, Mapping, Callable
 from collections import defaultdict
 import dataclasses
 import difflib
