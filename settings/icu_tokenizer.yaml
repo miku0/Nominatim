@@ -210,5 +210,5 @@ token-analysis:
       variants:
           - !include icu-rules/variants-vi.yaml
 query-preprocessing:
-    - step: normalize
     - step: split-key-japanese-phrases
+    - step: normalize
