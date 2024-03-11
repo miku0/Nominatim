@@ -37,7 +37,7 @@ class _NormalizationPreprocessing:
     def normalize_text(self, text: str) -> str:
         return cast(str, self.normalizer.transliterate(text))
 
-def create(config: QueryConfig, normalizer: Any) -> Callable[[QueryInfo], None]:
+def create(config: QueryConfig, normalizer: Any) -> Callable[[List[qmod.Phrase]], List[qmod.Phrase]]:
     """ Create a normalization function. 
     """
     return _NormalizationPreprocessing(config, normalizer)

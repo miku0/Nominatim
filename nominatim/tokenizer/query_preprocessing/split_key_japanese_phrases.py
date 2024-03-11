@@ -71,7 +71,7 @@ class _JapanesePreprocessing:
                                 for p in phrases)))
         return splited_address
 
-def create(config: QueryConfig, normalizer: Any) -> Callable[[QueryInfo], None]:
+def create(config: QueryConfig, normalizer: Any) -> Callable[[List[qmod.Phrase]], List[qmod.Phrase]]:
     """ Create a function of japanese preprocessing. 
     """
     return _JapanesePreprocessing(config, normalizer)

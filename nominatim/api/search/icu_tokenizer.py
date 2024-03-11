@@ -7,7 +7,10 @@
 """
 Implementation of query analysis for the ICU tokenizer.
 """
-from typing import Tuple, Dict, List, Optional, NamedTuple, Iterator, Any, cast, Sequence, Mapping, Callable
+from typing import (
+    Tuple, Dict, List, Optional, NamedTuple,
+    Iterator, Any, cast, Sequence, Mapping, Callable
+)
 from collections import defaultdict
 import dataclasses
 import difflib
@@ -24,7 +27,8 @@ from nominatim.api.search.query_analyzer_factory import AbstractQueryAnalyzer
 from nominatim.db.sqlalchemy_types import Json
 
 from nominatim.tokenizer.query_preprocessing.config import QueryConfig
-from nominatim.tokenizer.query_preprocessing.base import QueryHandler, QueryInfo
+from nominatim.tokenizer.query_preprocessing.base import QueryHandler
+from nominatim.errors import UsageError
 
 DB_TO_TOKEN_TYPE = {
     'W': qmod.TokenType.WORD,
@@ -161,10 +165,12 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                      sa.Column('type', sa.Text, nullable=False),
                      sa.Column('word', sa.Text),
                      sa.Column('info', Json))
-        
-        def _preprocessing(rules: Optional[Sequence[Mapping[str, Any]]]) ->List[Callable[[QueryInfo], None]]:
-            handlers: List[Callable[[QueryInfo], None]] = []
 
+        def _preprocessing(
+            rules: Optional[Sequence[Mapping[str, Any]]]
+        ) -> List[Callable[[List[qmod.Phrase]], List[qmod.Phrase]]]:
+
+            handlers: List[Callable[[List[qmod.Phrase]], List[qmod.Phrase]]] = []
             if rules:
                 for func in rules:
                     if 'step' not in func:
@@ -172,8 +178,10 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
                     if not isinstance(func['step'], str):
                         raise UsageError("'step' attribute must be a simple string.")
 
-                    module: QueryHandler = \
-                        self.conn.config.load_plugin_module(func['step'], 'nominatim.tokenizer.query_preprocessing')
+                    module: QueryHandler = self.conn.config.load_plugin_module(
+                        func['step'],
+                        'nominatim.tokenizer.query_preprocessing'
+                    )
 
                     #handlers.append(module.create(QueryConfig(func),self.conn))
                     handlers.append(module.create(QueryConfig(func), self.normalizer))
@@ -184,7 +192,6 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         #self.handlers = await self.conn.get_cached_value('ICUTOK', 'preprocessing',
         #                                            _preprocessing(preprocessing_rules))
         self.handlers = _preprocessing(preprocessing_rules)
-        
 
     async def analyze_query(self, phrases: List[qmod.Phrase]) -> qmod.QueryStruct:
         """ Analyze the given list of phrases and return the
@@ -228,12 +235,12 @@ class ICUQueryAnalyzer(AbstractQueryAnalyzer):
         return query
 
 
-    #def normalize_text(self, text: str) -> str:
-    #    """ Bring the given text into a normalized form. That is the
-    #        standardized form search will work with. All information removed
-    #        at this stage is inevitably lost.
-    #    """
-    #    return cast(str, self.normalizer.transliterate(text))
+    def normalize_text(self, text: str) -> str:
+        """ Bring the given text into a normalized form. That is the
+            standardized form search will work with. All information removed
+            at this stage is inevitably lost.
+        """
+        return cast(str, self.normalizer.transliterate(text))
 
 
     def split_query(self, query: qmod.QueryStruct) -> Tuple[QueryParts, WordDict]:

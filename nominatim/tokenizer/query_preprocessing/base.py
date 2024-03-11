@@ -7,11 +7,12 @@
 """
 Common data types and protocols for preprocessing.
 """
-from typing import Optional, List, Mapping, Callable
+from typing import Optional, List, Mapping, Callable, Any
 
 from nominatim.tokenizer.query_preprocessing.config import QueryConfig
 from nominatim.typing import Protocol, Final
 from nominatim.api.search import Phrase
+from nominatim.api.search import query as qmod
 
 class QueryInfo:
     """ Container class for information handed into to handler functions.
@@ -25,7 +26,7 @@ class QueryInfo:
 class QueryHandler(Protocol):
     """ Protocol for query modules.
     """
-    def create(self, config: QueryConfig) -> Callable[[QueryInfo], None]:
+    def create(self, config: QueryConfig, normalizer: Any) -> Callable[[List[qmod.Phrase]], List[qmod.Phrase]]:
         """
         Create a function for sanitizing a place.
 
