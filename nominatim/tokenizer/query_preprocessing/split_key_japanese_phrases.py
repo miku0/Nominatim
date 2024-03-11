@@ -8,10 +8,6 @@
 This file divides Japanese addresses into three categories:
 prefecture, municipality, and other.
 The division is not strict but simple using these keywords.
-Based on this division, icu_tokenizer.py inserts
-a SOFT_PHRASE break between the divided words 
-and penalizes the words with this SOFT_PHRASE
-to lower the search priority.
 """
 import re
 from typing import List, Callable, Any

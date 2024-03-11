@@ -25,10 +25,8 @@ class _NormalizationPreprocessing:
     def __call__(
         self, phrases: List[qmod.Phrase]
     ) -> List[qmod.Phrase]:
-        """Split a Japanese address using japanese_tokenizer.
+        """Normalize text using ICU.
         """
-        #analyser = ICUQueryAnalyzer(self.conn)
-        #analyser.setup()
         normalized = list(filter(lambda p: p.text,
                                 (qmod.Phrase(p.ptype, self.normalize_text(p.text))
                                 for p in phrases)))

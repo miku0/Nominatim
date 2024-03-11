@@ -33,6 +33,7 @@ class QueryHandler(Protocol):
         Arguments:
             config: A dictionary with the additional configuration options
                     specified in the tokenizer configuration
+            normalizer: A instance to transliterate text
 
         Return:
             The result is a list modified by the preprocessor.
