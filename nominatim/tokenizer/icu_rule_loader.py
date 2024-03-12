@@ -61,6 +61,8 @@ class ICURuleLoader:
         # Load optional sanitizer rule set.
         self.sanitizer_rules = rules.get('sanitizers', [])
 
+        # Load optional preprocessing rule set.
+        self.preprocessing_rules = rules.get('query-preprocessing', [])
 
     def load_config_from_db(self, conn: Connection) -> None:
         """ Get previously saved parts of the configuration from the
