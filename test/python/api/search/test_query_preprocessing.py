@@ -16,14 +16,6 @@ from nominatim.api import NominatimAPIAsync
 from nominatim.api.search.query import Phrase, PhraseType, BreakType
 import nominatim.api.search.icu_tokenizer as tok
 
-async def add_word(conn, word_id, word_token, wtype, word, info = None):
-    t = conn.t.meta.tables['word']
-    await conn.execute(t.insert(), {'word_id': word_id,
-                                    'word_token': word_token,
-                                    'type': wtype,
-                                    'word': word,
-                                    'info': info})
-
 def make_phrase(query):
     return [Phrase(PhraseType.NONE, s) for s in query.split(',')]
 
@@ -42,6 +34,7 @@ async def conn(table_factory):
     async with api.begin() as conn:
         yield conn
     await api.close()
+
 @pytest.mark.asyncio
 async def test_split_key_japanese_full(conn):
     ana = await tok.create_query_analyzer(conn)
@@ -58,7 +51,6 @@ async def test_split_key_japanese_full(conn):
     query = await ana.analyze_query(make_phrase('東京都中央區1-2'))
     assert query.source[0].text == '東京都, 中央區, 1-2'
 
-
 @pytest.mark.asyncio
 async def test_split_key_japanese_pattern(conn):
     ana = await tok.create_query_analyzer(conn)
@@ -68,4 +60,3 @@ async def test_split_key_japanese_pattern(conn):
 
     query = await ana.analyze_query(make_phrase('東京都中央区'))
     assert query.source[0].text == '東京都, 中央区'
-
